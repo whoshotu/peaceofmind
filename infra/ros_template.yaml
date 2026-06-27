@@ -1,0 +1,143 @@
+# ROS Template for peaceofmind
+# This template provisions the required Alibaba Cloud resources:
+#   - VPC & Security Group
+#   - ACK cluster (to run Docker containers)
+#   - API Gateway exposing /chat and /admin endpoints
+#   - OSS bucket (used by the SMS adapter as proof of Alibaba Cloud usage)
+#   - RAM role with permissions for OSS and SMS services
+#   - Optional Redis & PolarDB instances could be added later.
+
+ROSTemplateFormatVersion: '2015-09-01'
+Description: 'peaceofmind Agent Society infrastructure'
+
+Parameters:
+  AccessKeyId:
+    Type: String
+    Description: Alibaba Cloud AccessKeyId
+  AccessKeySecret:
+    Type: String
+    Description: Alibaba Cloud AccessKeySecret
+  OssBucketName:
+    Type: String
+    Default: peaceofmind-logs
+    Description: Name of the OSS bucket for logs
+  SmsSignName:
+    Type: String
+    Default: YourSign
+    Description: SMS sign name (placeholder)
+  SmsTemplateCode:
+    Type: String
+    Default: YourTemplate
+    Description: SMS template code (placeholder)
+  VpcCidr:
+    Type: String
+    Default: 10.0.0.0/16
+  SubnetCidr:
+    Type: String
+    Default: 10.0.0.0/24
+
+Resources:
+  Vpc:
+    Type: VPC::VPC
+    Properties:
+      CidrBlock: !Ref VpcCidr
+      EnableIpv6: false
+
+  Subnet:
+    Type: VPC::VSwitch
+    Properties:
+      VpcId: !GetAtt Vpc.VpcId
+      CidrBlock: !Ref SubnetCidr
+      ZoneId: cn-hangzhou-h
+
+  SecurityGroup:
+    Type: VPC::SecurityGroup
+    Properties:
+      VpcId: !GetAtt Vpc.VpcId
+      GroupName: peaceofmind-sg
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          PortRange: '80/80'
+          SourceCidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          PortRange: '8000/8000'
+          SourceCidrIp: 0.0.0.0/0
+
+  OssBucket:
+    Type: OSS::Bucket
+    Properties:
+      BucketName: !Ref OssBucketName
+      StorageClass: Standard
+
+  RamRole:
+    Type: RAM::Role
+    Properties:
+      RoleName: peaceofmind-role
+      AssumeRolePolicyDocument:
+        Version: '1'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [ecs.aliyuncs.com, ack.aliyuncs.com]
+            Action: sts:AssumeRole
+
+  RamPolicy:
+    Type: RAM::Policy
+    Properties:
+      PolicyName: peaceofmind-policy
+      PolicyDocument:
+        Version: '1'
+        Statement:
+          - Effect: Allow
+            Action:
+              - oss:PutObject
+              - oss:DeleteObject
+              - dysmsapi:SendMessage
+            Resource: '*'
+
+  AttachPolicy:
+    Type: RAM::AttachPolicyToRole
+    Properties:
+      PolicyName: !Ref RamPolicy.PolicyName
+      RoleName: !Ref RamRole.RoleName
+
+  AckCluster:
+    Type: ACK::Cluster
+    Properties:
+      Name: peaceofmind-cluster
+      VpcId: !GetAtt Vpc.VpcId
+      VSwitchIds: [ !GetAtt Subnet.VSwitchId ]
+      SecurityGroupId: !GetAtt SecurityGroup.SecurityGroupId
+      MasterInstanceTypes: ecs.c5.large
+      WorkerInstanceTypes: ecs.c5.large
+      NodeCount: 2
+      # The containers for backend and frontend must be pushed to a registry and referenced in the ACK service definition.
+
+  ApiGateway:
+    Type: APIGateway::Api
+    Properties:
+      Name: peaceofmind-gateway
+      Protocol: HTTPS
+      Description: API Gateway exposing /chat and /admin endpoints
+      RouteConfig:
+        Routes:
+          - Path: /chat
+            Method: POST
+            BackendConfig:
+              TargetType: ACK
+              ClusterId: !GetAtt AckCluster.ClusterId
+              ServiceName: backend
+          - Path: /admin
+            Method: ANY
+            BackendConfig:
+              TargetType: ACK
+              ClusterId: !GetAtt AckCluster.ClusterId
+              ServiceName: backend
+
+Outputs:
+  ApiEndpoint:
+    Description: Public API Gateway endpoint
+    Value: !GetAtt ApiGateway.ApiInvokeUrl
+  OssBucketOutput:
+    Description: OSS bucket name used for proof
+    Value: !Ref OssBucketName

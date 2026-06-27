@@ -1,0 +1,8 @@
+fastapi==0.111.0
+uvicorn[standard]==0.30.1
+git+https://github.com/qwencloud/qwen-python.git@v0.2.0#egg=qwencloud
+temporalio==1.8.0
+alibabacloud-dysmsapi20210711==2.0.6
+requests==2.32.3
+psycopg2-binary==2.9.9
+redis==5.0.4
