@@ -16,3 +16,11 @@ node_modules/
 /build/
 # Docker
 *.db
+
+# Secrets and local environments
+.env
+backend/.env
+.venv/
+venv/
+__pycache__/
+*.py[cod]
