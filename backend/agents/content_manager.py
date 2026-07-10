@@ -1,6 +1,6 @@
 """Content Manager Agent
 
-Implements the function signature declared in QwenClient:
+Implements a specialist-agent run function used by the Temporal orchestrator:
 
     name: manage_content
     parameters: {action: str, title?: str, schedule_time?: str}

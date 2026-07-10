@@ -1,6 +1,6 @@
 """Creator Assistant Agent
 
-Implements the function signature declared in QwenClient:
+Implements a specialist-agent run function used by the Temporal orchestrator:
 
     name: assist_creator
     parameters: {task: str}

@@ -1,6 +1,6 @@
 """All-Purpose Runner Agent
 
-Implements the function signature declared in QwenClient:
+Implements a specialist-agent run function used by the Temporal orchestrator:
 
     name: run_external_task
     parameters: {operation: str, payload: object}
