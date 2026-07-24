@@ -17,6 +17,7 @@ spec:
         app.kubernetes.io/name: backend
         app.kubernetes.io/part-of: peaceofmind
     spec:
+      automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true
         runAsUser: 100
