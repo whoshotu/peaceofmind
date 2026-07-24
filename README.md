@@ -99,15 +99,7 @@ The ROS template `infra/ros_template.yaml` is linked in the repository. After de
 
 ---
 
-## Demo Video
 
-A short (< 3 min) demonstration is hosted on YouTube:
-
-> **[Demo Video – peaceofmind Agent Society](https://www.youtube.com/watch?v=PLACEHOLDER)**
-
-*(Replace the placeholder URL with the actual YouTube link after uploading.)*
-
----
 
 ## License
 
