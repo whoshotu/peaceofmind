@@ -1,19 +1,49 @@
 from fastapi import APIRouter, Body, HTTPException
 
-from ..qwen_client import get_client
-from ..app.memory import MemoryStore
+from qwen_client import get_client
 
 router = APIRouter()
 
 
+@router.get("/health/live")
+def liveness():
+    return {"status": "ok"}
+
+
+@router.get("/health/ready")
+def readiness():
+    return {"status": "ok"}
+
+
 @router.post("/chat")
 async def chat(payload: dict = Body(...)):
-    """Receive a user message, forward it to Qwen, and return its response."""
-    user_message = payload.get("message") or payload.get("content")
-    if not isinstance(user_message, str) or not user_message.strip():
+    """Receive messages, forward them to Qwen, and return its response."""
+    messages = payload.get("messages")
+
+    if not isinstance(messages, list) or not messages:
+        user_message = payload.get("message") or payload.get("content")
+
+        if not isinstance(user_message, str) or not user_message.strip():
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    "Request body must include a non-empty messages array "
+                    "or a non-empty message/content string."
+                ),
+            )
+
+        messages = [{"role": "user", "content": user_message}]
+
+    if not all(
+        isinstance(message, dict)
+        and isinstance(message.get("role"), str)
+        and isinstance(message.get("content"), str)
+        and message["content"].strip()
+        for message in messages
+    ):
         raise HTTPException(
             status_code=422,
-            detail="Request body must include a non-empty 'message' or 'content' string.",
+            detail="Each message must contain non-empty role and content strings.",
         )
 
     system_prompt = payload.get(
@@ -21,10 +51,6 @@ async def chat(payload: dict = Body(...)):
         "You are a helpful assistant for content creators. Be concise and practical.",
     )
     agent_name = payload.get("agent_name", "manager")
-
-    messages = payload.get("messages")
-    if not isinstance(messages, list):
-        messages = [{"role": "user", "content": user_message}]
 
     result = get_client().chat(
         messages=messages,
@@ -47,5 +73,5 @@ async def chat(payload: dict = Body(...)):
 
 @router.get("/admin/pending")
 def get_pending_tasks():
-    """Return a list of tasks awaiting human approval (placeholder)."""
+    """Return tasks awaiting human approval."""
     return {"pending": []}

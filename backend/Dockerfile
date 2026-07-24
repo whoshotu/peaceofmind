@@ -1,19 +1,27 @@
-# Use the official Python image as a base.
 FROM python:3.11-slim
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
 WORKDIR /app
 
-# Install system dependencies (optional, for psycopg2)
-RUN apt-get update && apt-get install -y gcc libpq-dev && rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y git \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies.
-COPY backend/requirements.txt ./
+COPY requirements.txt ./
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the application source.
-COPY backend/ ./
+COPY . .
+
+RUN addgroup --system app \
+    && adduser --system --ingroup app --home /app app \
+    && chown -R app:app /app
+
+USER app
 
 EXPOSE 8000
 
-# Run the FastAPI server with Uvicorn.
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -20,7 +20,14 @@ node_modules/
 # Secrets and local environments
 .env
 backend/.env
+*.env.local
+*.env.production
+*.env.development
+.env.example
 .venv/
 venv/
 __pycache__/
 *.py[cod]
+# Kubernetes secrets (base64 encoded) - do not commit
+*/secret*.yaml
+secret*.yaml
