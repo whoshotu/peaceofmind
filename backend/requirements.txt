@@ -6,3 +6,4 @@ alibabacloud-oss20190517==1.0.6
 requests==2.32.3
 psycopg2-binary==2.9.9
 redis==5.0.4
+python-multipart==0.0.9
